@@ -5,7 +5,15 @@ import (
 	"testing"
 )
 
-func TestFindLength(t *testing.T) {
+func TestFindLength01(t *testing.T) {
+	testFindLength(t, findLength)	
+}
+
+func TestFindLength02(t *testing.T) {
+	testFindLength(t, findLength_Original)	
+}
+
+func testFindLength(t *testing.T, testFunc func([]int, []int)int) {
 	tests := []struct {
 		nums1  []int
 		nums2  []int
@@ -23,7 +31,7 @@ func TestFindLength(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		actual := findLength(tt.nums1, tt.nums2)
+		actual := testFunc(tt.nums1, tt.nums2)
 		// fmt.Printf("findLength %d, %d\n", actual, tt.expect)
 		if actual != tt.expect {
 			t.Errorf("findLength(%v, %v), expect=%d, actual=%d", tt.nums1, tt.nums2, tt.expect, actual)
