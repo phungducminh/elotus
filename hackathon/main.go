@@ -5,17 +5,18 @@ import (
 	"net/http"
 
 	"elotus.com/hackathon/auth"
+	"elotus.com/hackathon/server"
 )
 
-
-
 func main() {
-	// http.HandleFunc("/api/auth/register", auth.RegisterHandler)
-	loginHandler := &auth.LoginHandler {
-
+	// TODO: load from config file
+	serverCfg := &server.ServerConfig{
+		AuthSecretKey: "SECRET-KEY",
 	}
+	server := server.NewServer(serverCfg)
+	loginHandler := auth.NewLoginHandler(server)
 	http.Handle("/api/auth/login", loginHandler)
-	registerHandler := auth.NewRegisterHandler()
+	registerHandler := auth.NewRegisterHandler(server)
 	http.Handle("/api/auth/register", registerHandler)
 
 	port := ":8080"

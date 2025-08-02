@@ -2,26 +2,19 @@ package auth
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
-	"time"
 
-	"elotus.com/hackathon/db"
-	"github.com/golang-jwt/jwt"
-	"golang.org/x/crypto/bcrypt"
+	"elotus.com/hackathon/server"
 )
 
 type RegisterHandler struct {
-	dbClient db.Client
+	server *server.Server
+	auth   Auth
 }
 
-func NewRegisterHandler() *RegisterHandler {
-	dbConfig := &db.Config{}
-	dbClient := db.NewClient(dbConfig)
-
+func NewRegisterHandler(s *server.Server) *RegisterHandler {
 	return &RegisterHandler{
-		dbClient: dbClient,
+		auth: NewAuth(s.Storage, []byte(s.Cfg.AuthSecretKey)),
 	}
 }
 
@@ -39,33 +32,24 @@ func (h *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		http.Error(w, "Internal Error", http.StatusInternalServerError)
-	}
-	userRecord := db.UserRecord{
-		ID:       0,
-		Username: req.Username,
-		Password: string(hashed),
-	}
-	id, err := h.dbClient.InsertUser(userRecord)
+	resp, err := h.auth.Register(&req)
 	if err != nil {
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	res := &RegisterResponse{
-		UserId: strconv.FormatInt(id, 10),
-	}
-	json.NewEncoder(w).Encode(res)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
 }
 
 type LoginHandler struct {
+	auth Auth
 }
 
-func NewLoginHandler() *LoginHandler {
-	return &LoginHandler{}
+func NewLoginHandler(s *server.Server) *LoginHandler {
+	return &LoginHandler{
+		auth: NewAuth(s.Storage, []byte(s.Cfg.AuthSecretKey)),
+	}
 }
 
 func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -74,25 +58,19 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRecord := &db.UserRecord{
-		ID:       100,
-		Username: "elotus",
-		Password: "elotus",
+	var req LoginRequest
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
 	}
 
-	key := []byte("SECRET")
-	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		ExpiresAt: time.Now().Add(time.Minute * 5).Unix(),
-		IssuedAt:  time.Now().Unix(),
-		Issuer:    "elotus",
-		Subject:   userRecord.Username,
-	})
-	s, err := t.SignedString(key)
+	resp, err := h.auth.Login(&req)
 	if err != nil {
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "{ \"message\" : \"%s\" }\n", s)
+	json.NewEncoder(w).Encode(resp)
 }
