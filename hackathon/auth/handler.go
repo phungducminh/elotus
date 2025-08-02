@@ -9,6 +9,7 @@ import (
 
 	"elotus.com/hackathon/db"
 	"github.com/golang-jwt/jwt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type RegisterHandler struct {
@@ -38,11 +39,14 @@ func (h *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: handle password hashing
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+	}
 	userRecord := db.UserRecord{
 		ID:       0,
 		Username: req.Username,
-		Password: req.Password,
+		Password: string(hashed),
 	}
 	id, err := h.dbClient.InsertUser(userRecord)
 	if err != nil {
