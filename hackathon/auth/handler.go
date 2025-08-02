@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"elotus.com/hackathon/db"
+	"github.com/golang-jwt/jwt"
 )
 
 type RegisterHandler struct {
@@ -68,7 +70,25 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userRecord := &db.UserRecord{
+		ID:       100,
+		Username: "elotus",
+		Password: "elotus",
+	}
+
+	key := []byte("SECRET")
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+		ExpiresAt: time.Now().Add(time.Minute * 5).Unix(),
+		IssuedAt:  time.Now().Unix(),
+		Issuer:    "elotus",
+		Subject:   userRecord.Username,
+	})
+	s, err := t.SignedString(key)
+	if err != nil {
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, `{ "message" : "Login" }`)
+	fmt.Fprintf(w, "{ \"message\" : \"%s\" }\n", s)
 }
