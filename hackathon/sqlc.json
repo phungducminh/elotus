@@ -1,0 +1,18 @@
+{
+    "version": "2",
+    "sql": [
+        {
+            "schema": "storage/migration",
+            "queries": "storage/query/query.sql",
+            "engine": "mysql",
+            "gen": {
+                "go": {
+                    "package": "mysql",
+                    "out": "storage/mysql",
+                    "sql_package": "database/sql",
+                    "sql_driver": "github.com/go-sql-driver/mysql"
+                }
+            }
+        }
+    ]
+}
