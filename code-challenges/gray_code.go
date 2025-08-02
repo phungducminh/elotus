@@ -1,4 +1,4 @@
-package graycode
+package code_challenges
 
 func grayCode(n int) []int {
 	ans := make([]int, 0)

@@ -1,4 +1,4 @@
-package graycode
+package code_challenges
 
 import (
 	"fmt"
