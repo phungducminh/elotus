@@ -8,11 +8,13 @@ type Server struct {
 }
 
 type Config struct {
+	ServerPort                    int    `json:"server-port"`
 	MysqlDatasource               string `json:"mysql-datasource"`
 	MysqlConnMaxLifetimeInSeconds int    `json:"mysql-conn-max-life-time-in-seconds"`
 	MysqlMaxOpenConns             int    `json:"mysql-max-open-conns"`
 	MysqlMaxIdleConns             int    `json:"mysql-max-idle-conns"`
 	AuthSecretKey                 string `json:"auth-secret-key"`
+	TokenExpiresInSeconds         int    `json:"auth-token-expires-in-seconds"`
 }
 
 func NewServer(cfg *Config) *Server {
