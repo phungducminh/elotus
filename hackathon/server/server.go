@@ -3,22 +3,31 @@ package server
 import "elotus.com/hackathon/storage"
 
 type Server struct {
-	Cfg     *ServerConfig
+	Cfg     *Config
 	Storage storage.Storage
 }
 
-type ServerConfig struct {
-	MysqlDatasource string `json:"mysql-datasource"`
-	AuthSecretKey   string `json:"auth-secret-key"`
+type Config struct {
+	MysqlDatasource               string `json:"mysql-datasource"`
+	MysqlConnMaxLifetimeInSeconds int    `json:"mysql-conn-max-life-time-in-seconds"`
+	MysqlMaxOpenConns             int    `json:"mysql-max-open-conns"`
+	MysqlMaxIdleConns             int    `json:"mysql-max-idle-conns"`
+	AuthSecretKey                 string `json:"auth-secret-key"`
 }
 
-func NewServer(cfg *ServerConfig) *Server {
-	storageCfg := &storage.Config{
-		Datasource: cfg.MysqlDatasource,
-	}
-
+func NewServer(cfg *Config) *Server {
+	storageCfg := newStorageConfig(cfg)
 	return &Server{
 		Storage: storage.NewStorage(storageCfg),
 		Cfg:     cfg,
+	}
+}
+
+func newStorageConfig(cfg *Config) *storage.Config {
+	return &storage.Config{
+		Datasource:               cfg.MysqlDatasource,
+		ConnMaxLifeTimeInSeconds: cfg.MysqlConnMaxLifetimeInSeconds,
+		MaxOpenConns:             cfg.MysqlMaxOpenConns,
+		MaxIdleConns:             cfg.MysqlMaxIdleConns,
 	}
 }

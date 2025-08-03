@@ -33,8 +33,21 @@ func (h *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.auth.Register(&req)
-	if err != nil {
+	if err == ErrUsernameNotUnique {
+		w.Header().Set("Content-Type", "application/json")
+		resp := &Response{
+			Error: ErrorResponse{
+				Code:    "USERNAME_NOT_UNIQUE",
+				Message: "username is not unique",
+			},
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(resp)
+		return
+	} else if err != nil {
+		w.Header().Set("Content-Type", "application/json")
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -73,4 +86,13 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
+}
+
+type Response struct {
+	Error ErrorResponse `json:"error"`
+}
+
+type ErrorResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }

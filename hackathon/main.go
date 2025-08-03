@@ -10,8 +10,12 @@ import (
 
 func main() {
 	// TODO: load from config file
-	serverCfg := &server.ServerConfig{
-		AuthSecretKey: "SECRET-KEY",
+	serverCfg := &server.Config{
+		AuthSecretKey:                 "SECRET-KEY",
+		MysqlDatasource:               "root:elotus@tcp(localhost:3306)/elotus",
+		MysqlConnMaxLifetimeInSeconds: 0, // conn are not closed due to a connection's age
+		MysqlMaxOpenConns:             1000,
+		MysqlMaxIdleConns:             200,
 	}
 	server := server.NewServer(serverCfg)
 	loginHandler := auth.NewLoginHandler(server)

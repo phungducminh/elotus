@@ -3,31 +3,40 @@ package storage
 import (
 	"math/rand"
 	"sync"
+
+	"elotus.com/hackathon/storage/query"
 )
+
+// ensure compiletime check StorageRecorder imply Storage interface
+var _ Storage = NewRecorder()
 
 // StorageRecorder: used for internal testing
 type StorageRecorder struct {
 	mu    sync.RWMutex
-	users map[string]*UserRecord
+	users map[string]*query.User
 }
 
 func NewRecorder() *StorageRecorder {
 	return &StorageRecorder{
 		mu:    sync.RWMutex{},
-		users: make(map[string]*UserRecord),
+		users: make(map[string]*query.User),
 	}
 }
 
-func (c *StorageRecorder) InsertUser(r *UserRecord) (int64, error) {
+func (c *StorageRecorder) InsertUser(r *query.InsertUserParams) (int64, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	id := rand.Int63()
-	r.ID = id
-	c.users[r.Username] = r
+	user := &query.User{
+		ID:             id,
+		Username:       r.Username,
+		HashedPassword: r.HashedPassword,
+	}
+	c.users[r.Username] = user
 	return id, nil
 }
 
-func (c *StorageRecorder) GetUserByUserName(username string) (*UserRecord, error) {
+func (c *StorageRecorder) GetUserByUserName(username string) (*query.User, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	usr, ok := c.users[username]

@@ -7,8 +7,8 @@
             "engine": "mysql",
             "gen": {
                 "go": {
-                    "package": "mysql",
-                    "out": "storage/mysql",
+                    "package": "query",
+                    "out": "storage/query",
                     "sql_package": "database/sql",
                     "sql_driver": "github.com/go-sql-driver/mysql"
                 }

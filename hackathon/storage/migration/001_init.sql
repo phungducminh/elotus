@@ -1,6 +1,6 @@
 -- +migrate Up
 CREATE TABLE users (
-  id   INTEGER AUTO_INCREMENT PRIMARY KEY,
+  id bigint AUTO_INCREMENT PRIMARY KEY,
   username nvarchar(255) NOT NULL,
   hashed_password nvarchar(255) NOT NULL
 );

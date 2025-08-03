@@ -17,7 +17,7 @@ func TestRegister(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expect register successfully, username=%s, password=%s", req.Username, req.Password)
 	}
-	
+
 	user, err := recorder.GetUserByUserName("john")
 	if err != nil {
 		t.Fatalf("expect found registered user, username=%s, password=%s, userId=%s",
@@ -26,6 +26,14 @@ func TestRegister(t *testing.T) {
 
 	if user.HashedPassword == req.Password {
 		t.Fatal("expect password must be hashed")
+	}
+
+	_, err = auth.Register(&RegisterRequest{
+		Username: "john",
+		Password: "B@123P",
+	})
+	if err == nil {
+		t.Fatalf("register duplicate username, expect register failed, username=%s, password=%s", req.Username, req.Password)
 	}
 }
 

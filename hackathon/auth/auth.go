@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"elotus.com/hackathon/storage"
+	"elotus.com/hackathon/storage/query"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var (
 	ErrInvalidCredentials = fmt.Errorf("auth: invalid credentials")
+	ErrUsernameNotUnique  = fmt.Errorf("auth: username not unique")
 )
 
 type Auth interface {
@@ -20,13 +22,13 @@ type Auth interface {
 }
 
 type auth struct {
-	storage storage.Storage
+	storage   storage.Storage
 	secretKey []byte
 }
 
 func NewAuth(storage storage.Storage, secretKey []byte) Auth {
 	return &auth{
-		storage: storage,
+		storage:   storage,
 		secretKey: secretKey,
 	}
 }
@@ -37,8 +39,14 @@ func (au *auth) Register(req *RegisterRequest) (*RegisterResponse, error) {
 		return nil, err
 	}
 
-	user := &storage.UserRecord{
-		Username: req.Username,
+	// TODO: @check in cache
+	_, err = au.storage.GetUserByUserName(req.Username)
+	if err != storage.ErrNotFound {
+		return nil, ErrUsernameNotUnique
+	}
+
+	user := &query.InsertUserParams{
+		Username:       req.Username,
 		HashedPassword: string(hashed),
 	}
 	id, err := au.storage.InsertUser(user)
@@ -48,7 +56,7 @@ func (au *auth) Register(req *RegisterRequest) (*RegisterResponse, error) {
 
 	resp := &RegisterResponse{
 		UserId: strconv.FormatInt(id, 10),
-	} 
+	}
 	return resp, nil
 }
 
@@ -82,8 +90,8 @@ func (au *auth) Login(req *LoginRequest) (*LoginResponse, error) {
 	}
 
 	resp := &LoginResponse{
-		AccessToken:  accessToken,
-		UserId:       strconv.FormatInt(user.ID, 10),
+		AccessToken: accessToken,
+		UserId:      strconv.FormatInt(user.ID, 10),
 	}
 
 	return resp, nil

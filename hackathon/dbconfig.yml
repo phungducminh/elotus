@@ -1,0 +1,5 @@
+development:
+  dialect: mysql
+  datasource: root:elotus@tcp(localhost:3306)/elotus?parseTime=true
+  dir: storage/migration
+  table: migrations
