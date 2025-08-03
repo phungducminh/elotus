@@ -2,6 +2,7 @@ package file
 
 import (
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 
 	. "elotus.com/hackathon/pkg/logutil/httputil"
@@ -12,8 +13,8 @@ import (
 const MaxUploadSize = 8 << 20
 
 type UploadFileRequest struct {
-	FileName string
-	Data     []byte
+	File   multipart.File
+	Header *multipart.FileHeader
 }
 
 type UploadFileResponse struct {
@@ -26,7 +27,7 @@ type FileHandler struct {
 
 func NewFileHandler(s *server.Server) *FileHandler {
 	return &FileHandler{
-		sender: NewSender(),
+		sender: NewSender(s.Logger),
 		lg:     s.Logger,
 	}
 }
@@ -45,10 +46,22 @@ func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ResponseBadRequest(w, "FILE_TOO_LARGE", "file exceeds 8MB")
 		return
 	}
+	file, header, err := r.FormFile("data")
+	if err != nil {
+		ResponseBadRequest(w, "INVALID_FORM", "expect a form with field named 'data'")
+		return
+	}
 
-	var req UploadFileRequest
-
-	resp, err := h.sender.Upload(r.Context(), &req)
+	h.lg.Info("file info", zap.Any("header", header), zap.Any("file", file))
+	req := &UploadFileRequest{
+		File:   file,
+		Header: header,
+	}
+	resp, err := h.sender.Upload(r.Context(), req)
+	if err == ErrImageFileOnly {
+		ResponseBadRequest(w, "IMAGE_ONLY", "image only")
+		return
+	}
 	if err != nil {
 		ResponseInternalServerError(w)
 		return

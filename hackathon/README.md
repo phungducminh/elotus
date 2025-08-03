@@ -1,12 +1,9 @@
 # Required features
-## make the error message as json
-## how to identify the log level should be used
-
-## create an simple form (with default server url) and upload file via that input
-## pass context.Context contains token to request
 ## verify file is stored
 ## check file is image and its size
 ## store file information in db
+## create an simple form (with default server url) and upload file via that input
+## pass context.Context contains token to request
 ## check return internal error if panic
 ## authentication for upload file endpoint by store the user id in token
 ## add context.Context
