@@ -65,6 +65,7 @@ func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+// TODO: handle duplication
 type Response struct {
 	Error ErrorResponse `json:"error"`
 }

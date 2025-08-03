@@ -27,7 +27,7 @@ func main() {
 	registerHandler := auth.NewRegisterHandler(server)
 	http.Handle("/api/auth/register", registerHandler)
 	fileHandler := file.NewFileHandler(server)
-	http.Handle("/api/file/upload", fileHandler)
+	http.Handle("/api/file/upload", auth.AuthMiddleware(server, fileHandler))
 
 	log.Printf("Starting server on %d...", serverCfg.ServerPort)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", serverCfg.ServerPort), nil)

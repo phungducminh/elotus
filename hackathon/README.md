@@ -1,13 +1,15 @@
 # Required features
-## handle duplicate username
-## verify the expiration token feature
-## create an upload file endpoint
+## add logger for tracking error
 ## create an simple form (with default server url) and upload file via that input
+## pass context.Context contains token to request
 ## verify file is stored
+## check file is image and its size
+## store file information in db
 ## check return internal error if panic
 ## authentication for upload file endpoint by store the user id in token
-## TODO: add context.Context
+## add context.Context
 ## Create database from the script
+## make the error message as json
 
 # Enhanced features:
 
@@ -34,3 +36,9 @@
 ### Login 2 times/d -> 40 M req/d -> 400 reqs/s, peak 1000 req/s, if we store user in cache 2d -> peak less than 1000
 ### Register: 1M reqs/d -> 10 reqs/s 
 ### max_connections is 1000 is good enough (not that we didn't store login time, each time user login, otherwise it will be 1000 reqs/s to db for just storing accessToken)
+
+# File upload
++ maxMemory: ParseMultipartForm(maxMemory) ??? what is the meaning of maxMemory?
++ what is the file part that can't be stored in memory?
+maxFileMemoryBytes: limit for only file content
+file metadata is always stored to memory

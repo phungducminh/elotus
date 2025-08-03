@@ -2,13 +2,14 @@ package auth
 
 import (
 	"testing"
+	"time"
 
 	"elotus.com/hackathon/storage"
 )
 
 func TestRegister(t *testing.T) {
 	recorder := storage.NewRecorder()
-	auth := NewAuth(recorder, []byte("SERCRET_KEY"))
+	auth := NewAuth(recorder, []byte("SECRET_KEY"), 60)
 	req := &RegisterRequest{
 		Username: "john",
 		Password: "A@123P",
@@ -39,7 +40,7 @@ func TestRegister(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	recorder := storage.NewRecorder()
-	auth := NewAuth(recorder, []byte("SERCRET_KEY"))
+	auth := NewAuth(recorder, []byte("SECRET_KEY"), 60)
 	_, err := auth.Register(&RegisterRequest{
 		Username: "john",
 		Password: "A@123P",
@@ -78,5 +79,81 @@ func TestLogin(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expect a non-registered user won't be able to login")
+	}
+}
+
+func TestVerifyValidAndExpiredToken(t *testing.T) {
+	recorder := storage.NewRecorder()
+	auth := NewAuth(recorder, []byte("SECRET_KEY"), 2)
+	registerResp, err := auth.Register(&RegisterRequest{
+		Username: "john",
+		Password: "A@123P",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	loginResp, err := auth.Login(&LoginRequest{
+		Username: "john",
+		Password: "A@123P",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	verifyResp, err := auth.Verify(&VerifyRequest{
+		AccessToken: loginResp.AccessToken,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if verifyResp.UserId != registerResp.UserId {
+		t.Fatalf("verify valid token, expect=%s, actual=%s", registerResp.UserId, verifyResp.UserId)
+	}
+
+	<-time.Tick(time.Second * 3)
+	_, err = auth.Verify(&VerifyRequest{
+		AccessToken: loginResp.AccessToken,
+	})
+	if err == nil {
+		t.Fatal("expect token is expired")
+	}
+}
+
+func TestVerifyInvalidToken(t *testing.T) {
+	recorder := storage.NewRecorder()
+	auth := NewAuth(recorder, []byte("SECRET_KEY"), 60)
+
+	_, err := auth.Register(&RegisterRequest{
+		Username: "john",
+		Password: "A@123P",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	loginResp, err := auth.Login(&LoginRequest{
+		Username: "john",
+		Password: "A@123P",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	invalidToken := loginResp.AccessToken[:len(loginResp.AccessToken)-1]
+	_, err = auth.Verify(&VerifyRequest{
+		AccessToken: invalidToken,
+	})
+	if err == nil {
+		t.Fatal("expect invalid token")
+	}
+
+	invalidAuth := NewAuth(recorder, []byte("ANOTHER_SECRET_KEY"), 60)
+	_, err = invalidAuth.Verify(&VerifyRequest{
+		AccessToken: loginResp.AccessToken,
+	})
+	if err == nil {
+		t.Fatal("expect invalid token")
 	}
 }

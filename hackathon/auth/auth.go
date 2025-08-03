@@ -13,23 +13,27 @@ import (
 
 var (
 	ErrInvalidCredentials = fmt.Errorf("auth: invalid credentials")
+	ErrInvalidOrExpired   = fmt.Errorf("auth: invalid token or expired")
 	ErrUsernameNotUnique  = fmt.Errorf("auth: username not unique")
 )
 
 type Auth interface {
 	Register(req *RegisterRequest) (*RegisterResponse, error)
 	Login(req *LoginRequest) (*LoginResponse, error)
+	Verify(req *VerifyRequest) (*VerifyResponse, error)
 }
 
 type auth struct {
-	storage   storage.Storage
-	secretKey []byte
+	storage          storage.Storage
+	secretKey        []byte
+	expiresInSeconds int
 }
 
-func NewAuth(storage storage.Storage, secretKey []byte) Auth {
+func NewAuth(storage storage.Storage, secretKey []byte, expiresInSeconds int) Auth {
 	return &auth{
-		storage:   storage,
-		secretKey: secretKey,
+		storage:          storage,
+		secretKey:        secretKey,
+		expiresInSeconds: expiresInSeconds,
 	}
 }
 
@@ -77,22 +81,39 @@ func (au *auth) Login(req *LoginRequest) (*LoginResponse, error) {
 		return nil, err
 	}
 
-	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		ExpiresAt: time.Now().Add(time.Minute * 5).Unix(),
+	expiresAt := time.Now().Add(time.Second * time.Duration(au.expiresInSeconds)).Unix()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+		ExpiresAt: expiresAt,
 		IssuedAt:  time.Now().Unix(),
 		Issuer:    "elotus",
-		Subject:   user.Username,
+		Subject:   strconv.FormatInt(user.ID, 10),
 	})
 
-	accessToken, err := t.SignedString(au.secretKey)
+	accessToken, err := token.SignedString(au.secretKey)
 	if err != nil {
 		return nil, err
 	}
 
 	resp := &LoginResponse{
 		AccessToken: accessToken,
+		ExpiresAt:   strconv.FormatInt(expiresAt, 10),
 		UserId:      strconv.FormatInt(user.ID, 10),
 	}
 
+	return resp, nil
+}
+
+func (au *auth) Verify(req *VerifyRequest) (*VerifyResponse, error) {
+	claims := jwt.StandardClaims{}
+	_, err := jwt.ParseWithClaims(req.AccessToken, &claims, func(token *jwt.Token) (interface{}, error) {
+		return au.secretKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &VerifyResponse{
+		UserId: claims.Subject,
+	}
 	return resp, nil
 }

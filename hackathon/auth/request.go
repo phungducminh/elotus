@@ -15,6 +15,15 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken  string `json:"accessToken"`
-	UserId       string `json:"userId"`
+	AccessToken string `json:"accessToken"`
+	ExpiresAt   string `json:"expiresAt"`
+	UserId      string `json:"userId"`
+}
+
+type VerifyRequest struct {
+	AccessToken string
+}
+
+type VerifyResponse struct {
+	UserId  string
 }

@@ -14,7 +14,7 @@ type RegisterHandler struct {
 
 func NewRegisterHandler(s *server.Server) *RegisterHandler {
 	return &RegisterHandler{
-		auth: NewAuth(s.Storage, []byte(s.Cfg.AuthSecretKey)),
+		auth: NewAuth(s.Storage, []byte(s.Cfg.AuthSecretKey), s.Cfg.TokenExpiresInSeconds),
 	}
 }
 
@@ -61,7 +61,7 @@ type LoginHandler struct {
 
 func NewLoginHandler(s *server.Server) *LoginHandler {
 	return &LoginHandler{
-		auth: NewAuth(s.Storage, []byte(s.Cfg.AuthSecretKey)),
+		auth: NewAuth(s.Storage, []byte(s.Cfg.AuthSecretKey), s.Cfg.TokenExpiresInSeconds),
 	}
 }
 
@@ -81,6 +81,7 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.auth.Login(&req)
 	if err != nil {
 		http.Error(w, "Internal Error", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
