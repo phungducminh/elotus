@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"elotus.com/hackathon/auth"
 	"elotus.com/hackathon/file"
@@ -21,7 +22,11 @@ func main() {
 		MysqlMaxIdleConns:             200,
 		ServerPort:                    8080,
 	}
-	server := server.NewServer(serverCfg)
+	server, err := server.NewServer(serverCfg)
+	if err != nil {
+		fmt.Printf("error when create server: %v", err)
+		os.Exit(-1)
+	}
 	loginHandler := auth.NewLoginHandler(server)
 	http.Handle("/api/auth/login", loginHandler)
 	registerHandler := auth.NewRegisterHandler(server)
@@ -30,8 +35,9 @@ func main() {
 	http.Handle("/api/file/upload", auth.AuthMiddleware(server, fileHandler))
 
 	log.Printf("Starting server on %d...", serverCfg.ServerPort)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", serverCfg.ServerPort), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", serverCfg.ServerPort), nil)
 	if err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+		fmt.Printf("error when start the server: %v", err)
+		os.Exit(-1)
 	}
 }

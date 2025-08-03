@@ -8,6 +8,7 @@ import (
 	"elotus.com/hackathon/storage"
 	"elotus.com/hackathon/storage/query"
 	"github.com/golang-jwt/jwt"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,10 +28,12 @@ type auth struct {
 	storage          storage.Storage
 	secretKey        []byte
 	expiresInSeconds int
+	lg               *zap.Logger
 }
 
-func NewAuth(storage storage.Storage, secretKey []byte, expiresInSeconds int) Auth {
+func NewAuth(lg *zap.Logger, storage storage.Storage, secretKey []byte, expiresInSeconds int) Auth {
 	return &auth{
+		lg:               lg,
 		storage:          storage,
 		secretKey:        secretKey,
 		expiresInSeconds: expiresInSeconds,

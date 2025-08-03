@@ -8,6 +8,7 @@ import (
 
 	"elotus.com/hackathon/storage/query"
 	_ "github.com/go-sql-driver/mysql"
+	"go.uber.org/zap"
 )
 
 var (
@@ -32,7 +33,7 @@ type Storage interface {
 	GetUserByUserName(username string) (*query.User, error)
 }
 
-func NewStorage(cfg *Config) Storage {
+func NewStorage(lg *zap.Logger, cfg *Config) Storage {
 	db, err := sql.Open("mysql", cfg.Datasource)
 	if err != nil {
 		panic(err)
@@ -40,11 +41,15 @@ func NewStorage(cfg *Config) Storage {
 	db.SetConnMaxLifetime(time.Second * time.Duration(cfg.ConnMaxLifeTimeInSeconds))
 	db.SetMaxOpenConns(cfg.MaxOpenConns)
 	db.SetMaxIdleConns(cfg.MaxIdleConns)
-	return &storage{db}
+	return &storage{
+		db: db,
+		lg: lg,
+	}
 }
 
 type storage struct {
 	db *sql.DB
+	lg *zap.Logger
 }
 
 func (c *storage) InsertUser(r *query.InsertUserParams) (int64, error) {

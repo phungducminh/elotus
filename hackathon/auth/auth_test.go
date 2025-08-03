@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"elotus.com/hackathon/storage"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestRegister(t *testing.T) {
+	lg := zaptest.NewLogger(t)
 	recorder := storage.NewRecorder()
-	auth := NewAuth(recorder, []byte("SECRET_KEY"), 60)
+	auth := NewAuth(lg, recorder, []byte("SECRET_KEY"), 60)
 	req := &RegisterRequest{
 		Username: "john",
 		Password: "A@123P",
@@ -39,8 +41,9 @@ func TestRegister(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
+	lg := zaptest.NewLogger(t)
 	recorder := storage.NewRecorder()
-	auth := NewAuth(recorder, []byte("SECRET_KEY"), 60)
+	auth := NewAuth(lg, recorder, []byte("SECRET_KEY"), 60)
 	_, err := auth.Register(&RegisterRequest{
 		Username: "john",
 		Password: "A@123P",
@@ -83,8 +86,9 @@ func TestLogin(t *testing.T) {
 }
 
 func TestVerifyValidAndExpiredToken(t *testing.T) {
+	lg := zaptest.NewLogger(t)
 	recorder := storage.NewRecorder()
-	auth := NewAuth(recorder, []byte("SECRET_KEY"), 2)
+	auth := NewAuth(lg, recorder, []byte("SECRET_KEY"), 2)
 	registerResp, err := auth.Register(&RegisterRequest{
 		Username: "john",
 		Password: "A@123P",
@@ -122,8 +126,9 @@ func TestVerifyValidAndExpiredToken(t *testing.T) {
 }
 
 func TestVerifyInvalidToken(t *testing.T) {
+	lg := zaptest.NewLogger(t)
 	recorder := storage.NewRecorder()
-	auth := NewAuth(recorder, []byte("SECRET_KEY"), 60)
+	auth := NewAuth(lg, recorder, []byte("SECRET_KEY"), 60)
 
 	_, err := auth.Register(&RegisterRequest{
 		Username: "john",
@@ -149,7 +154,7 @@ func TestVerifyInvalidToken(t *testing.T) {
 		t.Fatal("expect invalid token")
 	}
 
-	invalidAuth := NewAuth(recorder, []byte("ANOTHER_SECRET_KEY"), 60)
+	invalidAuth := NewAuth(lg, recorder, []byte("ANOTHER_SECRET_KEY"), 60)
 	_, err = invalidAuth.Verify(&VerifyRequest{
 		AccessToken: loginResp.AccessToken,
 	})

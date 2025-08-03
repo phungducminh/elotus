@@ -1,5 +1,7 @@
 # Required features
-## add logger for tracking error
+## make the error message as json
+## how to identify the log level should be used
+
 ## create an simple form (with default server url) and upload file via that input
 ## pass context.Context contains token to request
 ## verify file is stored
@@ -9,7 +11,6 @@
 ## authentication for upload file endpoint by store the user id in token
 ## add context.Context
 ## Create database from the script
-## make the error message as json
 
 # Enhanced features:
 

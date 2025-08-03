@@ -1,10 +1,16 @@
 package server
 
-import "elotus.com/hackathon/storage"
+import (
+	"elotus.com/hackathon/storage"
+	"go.uber.org/zap"
+
+	"elotus.com/hackathon/pkg/logutil"
+)
 
 type Server struct {
 	Cfg     *Config
 	Storage storage.Storage
+	Logger  *zap.Logger
 }
 
 type Config struct {
@@ -17,12 +23,19 @@ type Config struct {
 	TokenExpiresInSeconds         int    `json:"auth-token-expires-in-seconds"`
 }
 
-func NewServer(cfg *Config) *Server {
-	storageCfg := newStorageConfig(cfg)
-	return &Server{
-		Storage: storage.NewStorage(storageCfg),
-		Cfg:     cfg,
+func NewServer(cfg *Config) (*Server, error) {
+	lg, err := logutil.CreateDefaultZapLogger(zap.InfoLevel)
+	if err != nil {
+		return nil, err
 	}
+	storageCfg := newStorageConfig(cfg)
+	server := &Server{
+		Storage: storage.NewStorage(lg, storageCfg),
+		Cfg:     cfg,
+		Logger:  lg,
+	}
+
+	return server, nil
 }
 
 func newStorageConfig(cfg *Config) *storage.Config {
