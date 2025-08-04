@@ -93,8 +93,7 @@ mysql> select * from files;
 - sql-migrate: SQL schema migration tool for Go. https://github.com/rubenv/sql-migrate
     - only for development (I've add create db script manually without sql-migrate)
 
-### Enhanced features:
-
+### Future enhanced features:
 - add redis for storing user session
 - add rate-limiter
 - set up database: master and slave setup
