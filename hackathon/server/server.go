@@ -21,6 +21,7 @@ type Config struct {
 	MysqlMaxIdleConns             int    `json:"mysql-max-idle-conns"`
 	AuthSecretKey                 string `json:"auth-secret-key"`
 	TokenExpiresInSeconds         int    `json:"auth-token-expires-in-seconds"`
+	UploadFileDir                 string `json:"upload-file-dir"`
 }
 
 func NewServer(cfg *Config) (*Server, error) {

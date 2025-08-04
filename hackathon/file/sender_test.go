@@ -4,8 +4,11 @@ import (
 	"context"
 	"mime/multipart"
 	"net/textproto"
+	"strings"
 	"testing"
 
+	"elotus.com/hackathon/auth"
+	"elotus.com/hackathon/storage"
 	"go.uber.org/zap/zaptest"
 )
 
@@ -33,9 +36,10 @@ func TestUpload(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		sender := NewSender(zaptest.NewLogger(t))
+		dir := t.TempDir()
+		sender := NewSender(zaptest.NewLogger(t), storage.NewRecorder(), dir)
 		req := &UploadFileRequest{
-			File: nil,
+			File: strings.NewReader("Hello World"),
 			Header: &multipart.FileHeader{
 				Filename: "file.txt",
 				Header: textproto.MIMEHeader{
@@ -44,7 +48,8 @@ func TestUpload(t *testing.T) {
 				Size: 1000,
 			},
 		}
-		_, err := sender.Upload(context.Background(), req)
+		ctx := auth.WithUserId(context.Background(), "123")
+		_, err := sender.Upload(ctx, req)
 		if err != tt.expect {
 			t.Errorf("Upload(), expect=%v, actual=%v", tt.expect, err)
 		}

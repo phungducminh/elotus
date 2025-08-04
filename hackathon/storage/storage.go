@@ -31,6 +31,7 @@ type UserRecord struct {
 type Storage interface {
 	InsertUser(*query.InsertUserParams) (int64, error)
 	GetUserByUserName(username string) (*query.User, error)
+	InsertFile(*query.InsertFileParams) (int64, error)
 }
 
 func NewStorage(lg *zap.Logger, cfg *Config) Storage {
@@ -52,9 +53,9 @@ type storage struct {
 	lg *zap.Logger
 }
 
-func (c *storage) InsertUser(r *query.InsertUserParams) (int64, error) {
+func (c *storage) InsertUser(params *query.InsertUserParams) (int64, error) {
 	queries := query.New(c.db)
-	result, err := queries.InsertUser(context.TODO(), *r)
+	result, err := queries.InsertUser(context.TODO(), *params)
 	if err != nil {
 		return 0, err
 	}
@@ -71,4 +72,13 @@ func (c *storage) GetUserByUserName(username string) (*query.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (c *storage) InsertFile(params *query.InsertFileParams) (int64, error) {
+	queries := query.New(c.db)
+	result, err := queries.InsertFile(context.TODO(), *params)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
 }

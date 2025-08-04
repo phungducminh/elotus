@@ -22,6 +22,33 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 	return i, err
 }
 
+const insertFile = `-- name: InsertFile :execresult
+INSERT INTO files (
+  user_id,
+  filename,
+  content_type,
+  size
+) VALUES (
+  ?, ?, ?, ?
+)
+`
+
+type InsertFileParams struct {
+	UserID      int64
+	Filename    string
+	ContentType string
+	Size        int32
+}
+
+func (q *Queries) InsertFile(ctx context.Context, arg InsertFileParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, insertFile,
+		arg.UserID,
+		arg.Filename,
+		arg.ContentType,
+		arg.Size,
+	)
+}
+
 const insertUser = `-- name: InsertUser :execresult
 INSERT INTO users (
     username,

@@ -18,9 +18,10 @@ func main() {
 		TokenExpiresInSeconds:         60,
 		MysqlDatasource:               "root:elotus@tcp(localhost:3306)/elotus",
 		MysqlConnMaxLifetimeInSeconds: 0, // conn are not closed due to a connection's age
-		MysqlMaxOpenConns:             1000,
-		MysqlMaxIdleConns:             200,
-		ServerPort:                    8080,
+		MysqlMaxOpenConns: 1000,
+		MysqlMaxIdleConns: 200,
+		ServerPort:        8080,
+		UploadFileDir:     "tmp",
 	}
 	server, err := server.NewServer(serverCfg)
 	if err != nil {

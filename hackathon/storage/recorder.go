@@ -45,3 +45,7 @@ func (c *StorageRecorder) GetUserByUserName(username string) (*query.User, error
 	}
 	return usr, nil
 }
+
+func (c *StorageRecorder) InsertFile(*query.InsertFileParams) (int64, error) {
+	return rand.Int63(), nil
+}

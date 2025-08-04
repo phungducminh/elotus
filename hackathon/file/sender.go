@@ -3,13 +3,19 @@ package file
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"strconv"
 
+	"elotus.com/hackathon/auth"
+	"elotus.com/hackathon/storage"
+	"elotus.com/hackathon/storage/query"
 	"go.uber.org/zap"
 )
 
 var (
-	ErrInvalidFileHeader = fmt.Errorf("invalid file header")
-	ErrImageFileOnly     = fmt.Errorf("image file only")
+	ErrEmptyFile     = fmt.Errorf("file must not be empty")
+	ErrImageFileOnly = fmt.Errorf("image file only")
 )
 
 var AcceptedImagesContentTypes = map[string]struct{}{
@@ -28,23 +34,58 @@ type Sender interface {
 }
 
 type sender struct {
-	lg *zap.Logger
+	lg      *zap.Logger
+	storage storage.Storage
+	dir     string
 }
 
-func NewSender(lg *zap.Logger) Sender {
+func NewSender(lg *zap.Logger, storage storage.Storage, dir string) Sender {
 	return &sender{
-		lg: lg,
+		lg:      lg,
+		storage: storage,
+		dir:     dir,
 	}
 }
 
 func (s *sender) Upload(ctx context.Context, req *UploadFileRequest) (*UploadFileResponse, error) {
-	if req.Header == nil {
-		return nil, ErrInvalidFileHeader
+	if req.Header == nil || req.File == nil {
+		return nil, ErrEmptyFile
 	}
 
-	if _, ok := AcceptedImagesContentTypes[req.Header.Header.Get("Content-Type")]; !ok {
+	contentType := req.Header.Header.Get("Content-Type")
+	if _, ok := AcceptedImagesContentTypes[contentType]; !ok {
 		return nil, ErrImageFileOnly
 	}
 
-	return &UploadFileResponse{}, nil
+	userId, err := strconv.ParseInt(auth.UserId(ctx), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	id, err := s.storage.InsertFile(&query.InsertFileParams{
+		UserID:      userId,
+		Filename:    req.Header.Filename,
+		ContentType: contentType,
+		Size:        int32(req.Header.Size),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// in order to make sure the file path is unique, filename will be file_id
+	path := fmt.Sprintf("%s/%d", s.dir, id)
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	_, err = io.Copy(f, req.File)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &UploadFileResponse{
+		FileId: id,
+	}
+	return resp, nil
 }

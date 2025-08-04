@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -28,13 +29,32 @@ func AuthMiddleware(s *server.Server, handler http.Handler) http.Handler {
 		req := &VerifyRequest{
 			AccessToken: token,
 		}
-		_, err := au.Verify(req)
+		resp, err := au.Verify(req)
 		if err != nil {
 			s.Logger.Warn("Invalid or expired token")
 			http.Error(w, "", http.StatusUnauthorized)
 			return
 		}
 
-		handler.ServeHTTP(w, r)
+		ctx := r.Context()
+		newCtx := WithUserId(ctx, resp.UserId)
+		newReq := r.WithContext(newCtx)
+		handler.ServeHTTP(w, newReq)
 	})
+}
+
+type userId int
+
+var userIdKey userId = 0
+
+func WithUserId(parent context.Context, val string) context.Context {
+	return context.WithValue(parent, userIdKey, val)
+}
+
+func UserId(ctx context.Context) string {
+	val, ok := ctx.Value(userIdKey).(string)
+	if !ok {
+		return ""
+	}
+	return val
 }

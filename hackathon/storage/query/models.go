@@ -4,6 +4,14 @@
 
 package query
 
+type File struct {
+	ID          int64
+	UserID      int64
+	Filename    string
+	ContentType string
+	Size        int32
+}
+
 type User struct {
 	ID             int64
 	Username       string

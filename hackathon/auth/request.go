@@ -25,5 +25,5 @@ type VerifyRequest struct {
 }
 
 type VerifyResponse struct {
-	UserId  string
+	UserId string
 }
