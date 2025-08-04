@@ -1,35 +1,52 @@
-# Required features
-## create an simple form (with default server url) and upload file via that input
-## Create database from the script
+## How to run the service
+- Requirements: Docker is available
+### Steps (In MacOS Intel)
+- Make sure current directory is /hackathon
+- Run setup.sh: it should run a mysql docker container and create "elotus" db
+```
+bash ./setup.sh
+```
+- Run command (I've tried to put this command into setup.sh file, but failed)
+```
+docker exec -it mysql /bin/sh -c "mysql -h 127.0.0.1 -u root -p'elotus' < /dbscript.sql"
+```
+- Run the Golang service (might require to run "go mod tidy")
+```
+go run main.go
+```
+- Sample test cases
+```
+curl --location '127.0.0.1:8080/api/auth/register' \
+--header 'Content-Type: application/json' \
+--data '{
+    "username": "elotus",
+    "password": "elotus"
+}'
 
-# Enhanced features:
+curl --location '127.0.0.1:8080/api/auth/login' \
+--header 'Content-Type: application/json' \
+--data '{
+    "username": "elotus",
+    "password": "elotus"
+}'
 
-## add redis
-### fetch user and store user information
-### expiration time
+curl --location '127.0.0.1:8080/api/file/upload' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTQyNzM1MTUsImlhdCI6MTc1NDI3MzQ1NSwiaXNzIjoiZWxvdHVzIiwic3ViIjoiMSJ9.NoHOH4YA1nn3JR5HMkmexcfjtDNUvHabyAyw2TkSk4g' \
+--form 'data=@"<PLACEHOLDER>"'
+```
+- To reset database, please run:
+```
+bash ./teardown.sh
+```
 
-## add rate-limiter
-### for register and login endpoints
-### buffered chan for upload file?
+-----------------------------------------------------------------
+### Enhanced features:
 
-## set up database: master and slave setup
-## TODO: add distributed locking for username uniqueness
-## TODO: replace logger
-## TODO: add grpc gateway
-## TODO: add AWS queue
-## TODO: add docker
-## TODO: add circut breaker
-## TODO: add retry
-
-
-# Estimation
-## 100M users -> 20M DAU, 
-### Login 2 times/d -> 40 M req/d -> 400 reqs/s, peak 1000 req/s, if we store user in cache 2d -> peak less than 1000
-### Register: 1M reqs/d -> 10 reqs/s 
-### max_connections is 1000 is good enough (not that we didn't store login time, each time user login, otherwise it will be 1000 reqs/s to db for just storing accessToken)
-
-# File upload
-+ maxMemory: ParseMultipartForm(maxMemory) ??? what is the meaning of maxMemory?
-+ what is the file part that can't be stored in memory?
-maxFileMemoryBytes: limit for only file content
-file metadata is always stored to memory
+- add redis for storing user session
+- add rate-limiter
+- set up database: master and slave setup
+- add distributed locking for username uniqueness
+- add grpc gateway
+- add AWS queue
+- add circut breaker
+- add retry
