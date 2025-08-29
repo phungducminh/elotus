@@ -7,7 +7,7 @@ import (
 	"elotus.com/hackathon/storage/query"
 )
 
-// ensure compiletime check StorageRecorder imply Storage interface
+// ensure compile-time check StorageRecorder imply Storage interface
 var _ Storage = NewRecorder()
 
 // StorageRecorder: used for internal testing

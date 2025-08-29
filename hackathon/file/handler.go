@@ -41,13 +41,13 @@ func (h *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer r.Body.Close()
-	r.Body = http.MaxBytesReader(w, r.Body, MaxUploadSize)
-	err := r.ParseMultipartForm(MaxUploadSize)
-	if err != nil {
-		h.lg.Warn("file too large")
-		ResponseBadRequest(w, "FILE_TOO_LARGE", "file exceeds 8MB")
-		return
-	}
+	// r.Body = http.MaxBytesReader(w, r.Body, MaxUploadSize)
+	// err := r.ParseMultipartForm(MaxUploadSize)
+	// if err != nil {
+	// 	h.lg.Warn("file too large", zap.Error(err))
+	// 	ResponseBadRequest(w, "FILE_TOO_LARGE", "file exceeds 8MB")
+	// 	return
+	// }
 	file, header, err := r.FormFile("data")
 	if err != nil {
 		ResponseBadRequest(w, "INVALID_FORM", "expect a form with field named 'data'")
