@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"elotus.com/hackathon/auth"
@@ -34,66 +36,89 @@ func TestRegisterThenLoginThenUpload(t *testing.T) {
 	ss := httptest.NewServer(http.DefaultServeMux)
 	defer ss.Close()
 
-	registerReq := &auth.RegisterRequest{
+	if err := register(ss); err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := login(ss)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	p, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	var login auth.LoginResponse
+	json.Unmarshal(p, &login)
+
+
+	buffer := &bytes.Buffer{}
+	multipartW := multipart.NewWriter(buffer)
+	w, err := multipartW.CreateFormFile("data", "/Users/phungducminh/Pictures/pexels-pixabay-358532.jpg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open("/Users/phungducminh/Pictures/pexels-pixabay-358532.jpg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = f.WriteTo(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	multipartW.Close()
+
+	req, err := http.NewRequest("POST", ss.URL+"/api/file/upload", buffer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", login.AccessToken))
+	req.Header.Add("Content-Type", multipartW.FormDataContentType())
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	p, err = io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Printf("upload response: %s\n", p)
+}
+
+func login(ss *httptest.Server) (*http.Response, error) {
+	p, err := json.Marshal(&auth.LoginRequest{
 		Username: "john",
 		Password: "123456",
-	}
-	w := &bytes.Buffer{}
-	encoder := json.NewEncoder(w)
-	encoder.Encode(registerReq)
-	resp, err := http.Post(ss.URL+"/api/auth/register", "application/json", w)
+	})
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
-	w.Reset()
 
-	registerResp, err := io.ReadAll(resp.Body)
+	resp, err := http.Post(ss.URL+"/api/auth/login", "application/json", bytes.NewReader(p))
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 
-	fmt.Printf("register response: %s\n", registerResp)
+	return resp, nil
+}
 
-	loginReq := &auth.LoginRequest{
+func register(s *httptest.Server) error {
+	p, err := json.Marshal(&auth.RegisterRequest{
 		Username: "john",
 		Password: "123456",
-	}
-	encoder.Encode(loginReq)
-	resp, err = http.Post(ss.URL+"/api/auth/login", "application/json", w)
+	})
+	resp, err := http.Post(s.URL+"/api/auth/register", "application/json", bytes.NewReader(p))
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
-	w.Reset()
+	defer resp.Body.Close()
 
-	loginResp, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var loginRespVal auth.LoginResponse
-	decoder := json.NewDecoder(bytes.NewBuffer(loginResp))
-	decoder.Decode(&loginRespVal)
-	fmt.Printf("login response: %v\n", loginRespVal)
-
-	uploadReq, err := http.NewRequest("POST", ss.URL+"/api/file/upload", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	uploadReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", loginRespVal.AccessToken))
-	query := uploadReq.URL.Query()
-	// TODO: @replace with other picture
-	query.Add("data", "")
-	uploadReq.URL.RawQuery = query.Encode()
-	fmt.Printf("request: %v\n", uploadReq)
-	resp, err = http.DefaultClient.Do(uploadReq)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	uploadResp, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	fmt.Printf("upload response: %s\n", uploadResp)
+	return nil
 }
